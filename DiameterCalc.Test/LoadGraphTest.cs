@@ -10,7 +10,7 @@ namespace DiameterCalc.Test
         [Fact]
         public void TestLoadSimple()
         {
-            var graph = Program.LoadGraph("../../../Data/simple.json");
+            var graph = GraphInfo.Load("../../../Data/simple.json");
             Assert.Equal(3, graph.Nodes.Count);
             Assert.Single(graph.Edges);
         }
@@ -18,7 +18,7 @@ namespace DiameterCalc.Test
         [Fact]
         public void TestLoadFullyConnected()
         {
-            var graph = Program.LoadGraph("../../../Data/fully_connected.json");
+            var graph = GraphInfo.Load("../../../Data/fully_connected.json");
             Assert.Equal(10, graph.Nodes.Count);
             Assert.Equal(10, graph.Edges.Count);
         }
@@ -26,7 +26,7 @@ namespace DiameterCalc.Test
         [Fact]
         public void TestLoadRing()
         {
-            var graph = Program.LoadGraph("../../../Data/ring.json");
+            var graph = GraphInfo.Load("../../../Data/ring.json");
             Assert.Equal(10, graph.Nodes.Count);
             Assert.Equal(10, graph.Edges.Count);
         }

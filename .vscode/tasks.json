@@ -7,7 +7,7 @@
             "type": "process",
             "args": [
                 "build",
-                "${workspaceFolder}/ReferenceGrabber/ReferenceGrabber.csproj"
+                "${workspaceFolder}/ReferenceGraph.sln"
             ],
             "problemMatcher": "$msCompile"
         }

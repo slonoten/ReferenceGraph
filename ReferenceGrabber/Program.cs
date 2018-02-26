@@ -14,7 +14,7 @@
     using Newtonsoft.Json;
 
     public class Program
-    {    
+    {
         public static void Main(string[] args)
         {
             try
@@ -23,7 +23,7 @@
                 .SetBasePath(Directory.GetCurrentDirectory())
                 .AddJsonFile("appsettings.json");
 
-                string url, includeFilter, excludeFilter;
+                string url, includeFilter, excludeFilter, outPath;
                 int depth;
                 try
                 {
@@ -32,15 +32,16 @@
                     includeFilter = configuration["include_regex"];
                     excludeFilter = configuration["exclude_regex"];
                     depth = int.Parse(configuration["depth"]);
+                    outPath = configuration["out_file"];
                 }
-                catch(Exception ex)
+                catch (Exception ex)
                 {
                     throw new ApplicationException("Error reading configuration", ex);
                 }
 
                 var grabber = new ReferenceGrabber(url, depth, includeFilter, excludeFilter);
 
-                SaveGraph(grabber.Grab(), "graph.json");
+                SaveGraph(grabber.Grab(), outPath);
 
                 /*foreach(var res in grabber.Grab())
                 {
@@ -51,7 +52,7 @@
                     }
                 }*/
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 Console.WriteLine(ex.Message);
             }
@@ -62,34 +63,32 @@
         {
             var urlIds = new Dictionary<string, int>();
 
-            using(var writer = new StreamWriter(outPath, false))
+            using (var writer = new StreamWriter(outPath, false))
             {
-                using(var jsonWriter = new JsonTextWriter(writer))
+                using (var jsonWriter = new JsonTextWriter(writer))
                 {
                     jsonWriter.WriteStartObject();
-                    jsonWriter.WritePropertyName("edges");
+                    jsonWriter.WritePropertyName("Edges");
                     jsonWriter.WriteStartObject();
-                    foreach(var pageReferences in pagesReferences)
+                    foreach (var pageReferences in pagesReferences)
                     {
                         jsonWriter.WritePropertyName(GetId(pageReferences.url).ToString());
                         jsonWriter.WriteStartArray();
-                        foreach(var reference in pageReferences.refs)
+                        foreach (var reference in pageReferences.refs)
                         {
                             jsonWriter.WriteValue(GetId(reference));
                         }
                         jsonWriter.WriteEndArray();
                     }
                     jsonWriter.WriteEndObject();
-                    jsonWriter.WritePropertyName("nodes");
-                    jsonWriter.WriteStartArray();
-                    foreach(var urlIdPair in urlIds)
+                    jsonWriter.WritePropertyName("Nodes");
+                    jsonWriter.WriteStartObject();
+                    foreach (var urlIdPair in urlIds)
                     {
-                        jsonWriter.WriteStartObject();
                         jsonWriter.WritePropertyName(urlIdPair.Key);
                         jsonWriter.WriteValue(urlIdPair.Value);
-                        jsonWriter.WriteEndObject();
                     }
-                    jsonWriter.WriteEndArray();
+                    jsonWriter.WriteEndObject();
                     jsonWriter.WriteEndObject();
                 }
             }
