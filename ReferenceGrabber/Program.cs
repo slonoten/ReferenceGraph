@@ -2,9 +2,8 @@
 {
     using System;
     using System.Collections.Generic;
-    using System.Net.Http;
-    using System.Net.Http.Headers;
-    using System.Threading.Tasks;
+    using System.Diagnostics;
+    using System.Collections.Concurrent;
     using System.Linq;
     using System.Xml;
     using System.IO;
@@ -41,7 +40,16 @@
 
                 var grabber = new ReferenceGrabber(url, depth, includeFilter, excludeFilter);
 
-                SaveGraph(grabber.Grab(), outPath);
+                var queue = new ConcurrentQueue<(string, IEnumerable<string>)>();
+
+                var timer = Stopwatch.StartNew();
+
+                Console.WriteLine("Grabbing refferences with depth {0}...", depth);
+                grabber.Grab(queue);
+                Console.WriteLine("Completed in {0}. Saving...", timer.Elapsed);
+                timer.Restart();
+                SaveGraph(queue, outPath);
+                Console.WriteLine("Completed in {0}.", timer.Elapsed);
 
                 /*foreach(var res in grabber.Grab())
                 {

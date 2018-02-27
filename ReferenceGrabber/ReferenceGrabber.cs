@@ -5,11 +5,12 @@ namespace ReferenceGraphBuilder
     using System.Collections.Concurrent;
     using System.Linq;
     using System.Text.RegularExpressions;
+    using System.Threading.Tasks;
 
     using HtmlAgilityPack;
     internal class ReferenceGrabber
     {
-        private readonly List<IList<string>> urlQueue;
+        private readonly List<ConcurrentBag<string>> urlQueue;
 
         private readonly ConcurrentDictionary<string, object> urlDictionary = new ConcurrentDictionary<string, object>();
 
@@ -33,31 +34,33 @@ namespace ReferenceGraphBuilder
                 throw new ArgumentException("Root URL should be absolute", "rootUrl");
             }
 
-            this.urlQueue = new List<IList<string>>(Enumerable.Range(0, depth).Select(x => new List<string>()));
+            this.urlQueue = new List<ConcurrentBag<string>>(Enumerable.Range(0, depth).Select(x => new ConcurrentBag<string>()));
             this.urlQueue[0].Add(rootUrl);
 
             this.includeRegex = new Regex(includeFilter, RegexOptions.Compiled | RegexOptions.IgnoreCase);
             this.excludeRegex = new Regex(excludeFilter, RegexOptions.Compiled | RegexOptions.IgnoreCase);
         }
 
-        public IEnumerable<(string url, IEnumerable<string> references)> Grab()
+        public void Grab(ConcurrentQueue<(string url, IEnumerable<string> references)> queue)
         {
             for (var i = 0; i < this.urlQueue.Count; i++)
             {
                 var level = this.urlQueue[i];
 
-                foreach (var url in level)
+                Parallel.ForEach(level,
+                url => 
                 {
-                    var references = ExtractReferences(url)
-                        .Where(u => this.includeRegex.IsMatch(u) && !this.excludeRegex.IsMatch(u))
-                        .Select(this.NormalizeUrl)
-                        .Distinct()
-                        .ToArray();
+                            var references = ExtractReferences(url)
+                                .Where(u => this.includeRegex.IsMatch(u) && !this.excludeRegex.IsMatch(u))
+                                .Select(this.NormalizeUrl)
+                                .Distinct()
+                                .ToArray();
 
-                    yield return (url, references);
+                            queue.Enqueue((url, references));
 
-                    EnqueueReferences(references, i + 1);
+                            EnqueueReferences(references, i + 1);
                 }
+                );
             }
         }
 
