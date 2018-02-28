@@ -3,6 +3,9 @@ namespace DiameterCalc
     using System;
     using System.Linq;
     using System.Collections.Generic;
+    using System.Collections.Concurrent;
+    using System.Threading;    
+    using System.Threading.Tasks;
 
     public static class Distance
     {
@@ -60,6 +63,40 @@ namespace DiameterCalc
             }
 
             return (maxEccentricity, pairs);
+        }
+
+        public static (int diameter, IEnumerable<(int, int)> pairs) CalcDiameterParallel(IList<int[]> graph)
+        {
+            var pairs = new ConcurrentQueue<(int leftNode, IList<int> rightNodes)>();
+            var maxEccentricity = 0;
+            var pairsLock = new object();
+
+            Parallel.ForEach(Enumerable.Range(0, graph.Count),
+                i =>
+                {
+                    var (eccentricity, nodes) = CalcEccentricity(graph, i);
+                    // Check without lock
+                    if (eccentricity >= maxEccentricity)
+                    {
+                        lock(pairsLock)
+                        {
+                            // Check again becouse max might be changed before we've got inside lock
+                            if (eccentricity >= maxEccentricity)
+                            {
+                                if (eccentricity > maxEccentricity)
+                                {
+                                    maxEccentricity = eccentricity;
+                                    pairs.Clear();
+                                }
+                                
+                                pairs.Enqueue((i, nodes));
+                            }
+                        }
+                        
+                    }
+                });
+
+            return (maxEccentricity, pairs.SelectMany(p => p.rightNodes.Select(n => (p.leftNode, n))));
         }
     }
 }

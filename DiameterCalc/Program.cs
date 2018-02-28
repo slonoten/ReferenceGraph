@@ -6,7 +6,7 @@
     using System.IO;
 
     using Newtonsoft.Json;
-
+    using System.Diagnostics;
 
     public class Program
     {
@@ -21,9 +21,16 @@
                 
                 var graph = GraphInfo.Load(args[0]);
 
-                var (diameter, pairs) = Distance.CalcDiameter(graph.BuildSparseIncedenceMatrix());
+                var timer = Stopwatch.StartNew();
+
+                Console.WriteLine("Calculating graph diameter. Nodes count {0}...", graph.Nodes.Count);
+
+                var (diameter, pairs) = Distance.CalcDiameterParallel(graph.BuildSparseIncedenceMatrix());
 
                 var nodeToNameDict = graph.Nodes.ToDictionary(p => p.Value, p => p.Key);
+
+                Console.WriteLine("Complete in {0}", timer.Elapsed);
+                Console.WriteLine();
 
                 Console.WriteLine("Diameter is {0}", diameter);
 

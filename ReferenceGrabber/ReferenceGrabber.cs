@@ -47,19 +47,20 @@ namespace ReferenceGraphBuilder
             {
                 var level = this.urlQueue[i];
 
-                Parallel.ForEach(level,
-                url => 
-                {
-                            var references = ExtractReferences(url)
-                                .Where(u => this.includeRegex.IsMatch(u) && !this.excludeRegex.IsMatch(u))
-                                .Select(this.NormalizeUrl)
-                                .Distinct()
-                                .ToArray();
+                Parallel.ForEach(
+                    level, 
+                    new ParallelOptions { MaxDegreeOfParallelism = 64 },
+                    url => 
+                    {
+                                var references = ExtractReferences(url)
+                                    .Where(u => this.includeRegex.IsMatch(u) && !this.excludeRegex.IsMatch(u))
+                                    .Select(this.NormalizeUrl)
+                                    .Distinct()
+                                    .ToArray();
 
-                            queue.Enqueue((url, references));
-
-                            EnqueueReferences(references, i + 1);
-                }
+                                queue.Enqueue((url, references));
+                                EnqueueReferences(references, i + 1);
+                    }
                 );
             }
         }
